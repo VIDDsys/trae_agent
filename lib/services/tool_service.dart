@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'dart:convert';
+import 'package:http/http.dart' as http;
 import '../models/chat_message.dart';
 
 class ToolResult {
@@ -22,7 +23,6 @@ class ToolExecutionService {
   set workspacePath(String? path) => _workspacePath = path;
   String? get workspacePath => _workspacePath;
 
-  /// Execute a tool call and return the result
   Future<ToolResult> executeTool(ToolCall toolCall) async {
     toolCall.status = ToolCallStatus.running;
 
@@ -32,16 +32,14 @@ class ToolExecutionService {
           return await _readFile(toolCall);
         case 'write_file':
           return await _writeFile(toolCall);
-        case 'search_code':
-          return await _searchCode(toolCall);
-        case 'run_command':
-          return await _runCommand(toolCall);
-        case 'list_directory':
-          return await _listDirectory(toolCall);
-        case 'git_operation':
-          return await _gitOperation(toolCall);
         case 'edit_file':
           return await _editFile(toolCall);
+        case 'search_code':
+          return await _searchCode(toolCall);
+        case 'list_directory':
+          return await _listDirectory(toolCall);
+        case 'web_search':
+          return await _webSearch(toolCall);
         default:
           return ToolResult(
             toolCallId: toolCall.id,
@@ -60,14 +58,15 @@ class ToolExecutionService {
     }
   }
 
+  /// Resolve path relative to workspace if not absolute
   String _resolvePath(String path) {
-    final p = File(path).absolute;
-    if (p.existsSync()) return p.path;
-    if (_workspacePath != null) {
-      final resolved = '${_workspacePath!}/$path';
-      if (File(resolved).existsSync() || Directory(resolved).existsSync()) {
-        return resolved;
-      }
+    // If workspace is set and path is relative, resolve against workspace
+    if (_workspacePath != null && !path.startsWith('/')) {
+      return '${_workspacePath!}/$path';
+    }
+    // If file exists as-is, return it
+    if (File(path).existsSync() || Directory(path).existsSync()) {
+      return File(path).absolute.path;
     }
     return path;
   }
@@ -134,7 +133,7 @@ class ToolExecutionService {
 
     String content = await file.readAsString();
     if (!content.contains(oldStr)) {
-      return ToolResult(toolCallId: tc.id, error: 'old_string not found', success: false);
+      return ToolResult(toolCallId: tc.id, error: 'old_string not found in file', success: false);
     }
 
     content = content.replaceFirst(oldStr, newStr);
@@ -148,7 +147,7 @@ class ToolExecutionService {
     final query = tc.arguments['query'] as String?;
     final path = tc.arguments['path'] as String? ?? _workspacePath;
     if (query == null || path == null) {
-      return ToolResult(toolCallId: tc.id, error: 'Missing query or path', success: false);
+      return ToolResult(toolCallId: tc.id, error: 'Missing query or workspace path', success: false);
     }
 
     final searchDir = Directory(_resolvePath(path));
@@ -189,58 +188,10 @@ class ToolExecutionService {
     return ToolResult(toolCallId: tc.id, output: output);
   }
 
-  Future<ToolResult> _runCommand(ToolCall tc) async {
-    final command = tc.arguments['command'] as String?;
-    if (command == null) {
-      return ToolResult(toolCallId: tc.id, error: 'Missing command argument', success: false);
-    }
-
-    try {
-      final process = await Process.start(
-        'sh',
-        ['-c', command],
-        workingDirectory: _workspacePath,
-        runInShell: true,
-      );
-
-      final stdoutFuture = process.stdout.transform(utf8.decoder).join();
-      final stderrFuture = process.stderr.transform(utf8.decoder).join();
-
-      final exitCode = await process.exitCode;
-      final stdout = await stdoutFuture;
-      final stderr = await stderrFuture;
-
-      final output = [
-        if (stdout.isNotEmpty) stdout,
-        if (stderr.isNotEmpty) 'STDERR:\n$stderr',
-        '\nExit code: $exitCode',
-      ].join('\n');
-
-      tc.status = exitCode == 0
-          ? ToolCallStatus.completed
-          : ToolCallStatus.failed;
-      tc.result = output;
-      if (exitCode != 0) tc.error = stderr;
-
-      return ToolResult(
-        toolCallId: tc.id,
-        output: output,
-        error: exitCode != 0 ? stderr : null,
-        success: exitCode == 0,
-      );
-    } catch (e) {
-      return ToolResult(
-        toolCallId: tc.id,
-        error: 'Command execution failed: $e',
-        success: false,
-      );
-    }
-  }
-
   Future<ToolResult> _listDirectory(ToolCall tc) async {
     final path = tc.arguments['path'] as String? ?? _workspacePath;
     if (path == null) {
-      return ToolResult(toolCallId: tc.id, error: 'No path provided', success: false);
+      return ToolResult(toolCallId: tc.id, error: 'No path provided and no workspace set', success: false);
     }
 
     final dir = Directory(_resolvePath(path));
@@ -269,38 +220,93 @@ class ToolExecutionService {
     return ToolResult(toolCallId: tc.id, output: output);
   }
 
-  Future<ToolResult> _gitOperation(ToolCall tc) async {
-    final operation = tc.arguments['operation'] as String? ?? 'status';
-    final args = tc.arguments['args'] as String? ?? '';
+  /// Web search via HTTP (uses a search API or falls back to mock)
+  Future<ToolResult> _webSearch(ToolCall tc) async {
+    final query = tc.arguments['query'] as String?;
+    final count = tc.arguments['count'] as int? ?? 5;
 
-    final gitCmd = 'git $operation $args';
+    if (query == null || query.isEmpty) {
+      return ToolResult(toolCallId: tc.id, error: 'Missing query argument', success: false);
+    }
+
     try {
-      final process = await Process.start(
-        'sh',
-        ['-c', gitCmd],
-        workingDirectory: _workspacePath,
-        runInShell: true,
-      );
+      // Try Tavily-style search API (configurable via settings)
+      // For now, use a simple HTTP search approach
+      // If no custom search endpoint configured, return a helpful message
+      final encodedQuery = Uri.encodeQueryComponent(query);
 
-      final stdout = await process.stdout.transform(utf8.decoder).join();
-      final stderr = await process.stderr.transform(utf8.decoder).join();
-      final exitCode = await process.exitCode;
+      // Try DuckDuckGo instant answer as a free search option
+      final response = await http.get(
+        Uri.parse('https://api.duckduckgo.com/?q=$encodedQuery&format=json&no_html=1'),
+        headers: {'User-Agent': 'ViasAgent/1.0'},
+      ).timeout(const Duration(seconds: 15));
 
-      final output = [
-        if (stdout.isNotEmpty) stdout,
-        if (stderr.isNotEmpty) 'STDERR:\n$stderr',
-        '\nExit code: $exitCode',
-      ].join('\n');
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body) as Map<String, dynamic>;
+        final abstractText = data['AbstractText'] as String? ?? '';
+        final abstractSource = data['AbstractSource'] as String? ?? '';
+        final relatedTopics = data['RelatedTopics'] as List? ?? [];
 
+        final buffer = StringBuffer();
+        if (abstractText.isNotEmpty) {
+          buffer.writeln('## Search Results: "$query"');
+          buffer.writeln();
+          buffer.writeln(abstractText);
+          if (abstractSource.isNotEmpty) {
+            buffer.writeln('Source: $abstractSource');
+          }
+          buffer.writeln();
+        }
+
+        if (relatedTopics.isNotEmpty) {
+          int shown = 0;
+          for (final topic in relatedTopics) {
+            if (shown >= count) break;
+            final text = topic['Text'] as String?;
+            final url = topic['FirstURL'] as String?;
+            if (text != null) {
+              buffer.writeln('- $text');
+              if (url != null) buffer.writeln('  $url');
+              shown++;
+            }
+            // Handle nested topics
+            final topics = topic['Topics'] as List?;
+            if (topics != null) {
+              for (final sub in topics) {
+                if (shown >= count) break;
+                final subText = sub['Text'] as String?;
+                final subUrl = sub['FirstURL'] as String?;
+                if (subText != null) {
+                  buffer.writeln('- $subText');
+                  if (subUrl != null) buffer.writeln('  $subUrl');
+                  shown++;
+                }
+              }
+            }
+          }
+        }
+
+        if (buffer.isEmpty) {
+          buffer.writeln('No search results found for "$query".');
+          buffer.writeln('Try a different query or check your internet connection.');
+        }
+
+        final output = buffer.toString().trim();
+        tc.status = ToolCallStatus.completed;
+        tc.result = output;
+        return ToolResult(toolCallId: tc.id, output: output);
+      } else {
+        throw Exception('Search API returned ${response.statusCode}');
+      }
+    } catch (e) {
+      // Fallback: return a helpful message
+      final output = '⚠️ Web search is not available. '
+          'The search API request failed: $e\n\n'
+          'To use web search, configure a Tavily API key in Settings. '
+          'Without it, I can help with code, files, and general knowledge.';
       tc.status = ToolCallStatus.completed;
       tc.result = output;
-      return ToolResult(toolCallId: tc.id, output: output);
-    } catch (e) {
-      return ToolResult(
-        toolCallId: tc.id,
-        error: 'Git operation failed: $e',
-        success: false,
-      );
+      return ToolResult(toolCallId: tc.id, output: output, success: false);
     }
   }
 
