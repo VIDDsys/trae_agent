@@ -1,95 +1,51 @@
 import 'package:flutter/material.dart';
 
 class SyntaxHighlighter {
-  static SyntaxHighlighter? _forLanguage(String? language) {
-    switch (language?.toLowerCase()) {
-      case 'dart': return DartSyntaxHighlighter();
-      case 'python': case 'py': return PythonSyntaxHighlighter();
-      case 'javascript': case 'js': case 'jsx': case 'ts': case 'tsx': return JavaScriptSyntaxHighlighter();
-      case 'java': return JavaSyntaxHighlighter();
-      case 'kotlin': case 'kt': return KotlinSyntaxHighlighter();
-      case 'swift': return SwiftSyntaxHighlighter();
-      case 'rust': case 'rs': return RustSyntaxHighlighter();
-      case 'go': return GoSyntaxHighlighter();
-      case 'c': case 'cpp': case 'csharp': case 'cs': return CSyntaxHighlighter();
-      case 'html': return HtmlSyntaxHighlighter();
-      case 'css': return CssSyntaxHighlighter();
-      case 'json': return JsonSyntaxHighlighter();
-      case 'yaml': case 'yml': return YamlSyntaxHighlighter();
-      case 'markdown': case 'md': return MarkdownSyntaxHighlighter();
-      case 'sql': return SqlSyntaxHighlighter();
-      case 'bash': case 'sh': return BashSyntaxHighlighter();
-      default: return null;
+  static const Color kPlainColor = Color(0xFFE2E8F0);
+  static const Color kKeywordColor = Color(0xFFFF7B72);
+  static const Color kStringColor = Color(0xFFA5D6FF);
+  static const Color kNumberColor = Color(0xFF79C0FF);
+  static const Color kCommentColor = Color(0xFF8B949E);
+  static const Color kTypeColor = Color(0xFFFFA657);
+  static const Color kFunctionColor = Color(0xFFD2A8FF);
+  static const Color kOperatorColor = Color(0xFFFF7B72);
+  static const Color kPunctuationColor = Color(0xFFE2E8F0);
+  static const Color kVariableColor = Color(0xFFFFA657);
+  static const Color kAttributeColor = Color(0xFFFFA657);
+  static const Color kTagColor = Color(0xFF7EE787);
+  static const Color kBuiltinColor = Color(0xFFD2A8FF);
+  static const Color kAnnotationColor = Color(0xFFD2A8FF);
+
+  static const _TokenRule kDoubleQuote = _TokenRule(RegExp(r'"[^"]*"'), kStringColor);
+  static const _TokenRule kSingleQuote = _TokenRule(RegExp(r"'[^']*'"), kStringColor);
+  static const _TokenRule kNumber = _TokenRule(RegExp(r'\b(?:0[xX][0-9a-fA-F]+|[0-9]+\.[0-9]+|[0-9]+)\b'), kNumberColor);
+
+  TextSpan highlight(String code, String language) {
+    switch (language.toLowerCase()) {
+      case 'dart': return DartSyntaxHighlighter().highlight(code);
+      case 'python': return PythonSyntaxHighlighter().highlight(code);
+      case 'javascript':
+      case 'js': return JavaScriptSyntaxHighlighter().highlight(code);
+      case 'typescript':
+      case 'ts': return TypeScriptSyntaxHighlighter().highlight(code);
+      case 'java': return JavaSyntaxHighlighter().highlight(code);
+      case 'kotlin': return KotlinSyntaxHighlighter().highlight(code);
+      case 'rust':
+      case 'rs': return RustSyntaxHighlighter().highlight(code);
+      case 'go': return GoSyntaxHighlighter().highlight(code);
+      case 'c': return CSyntaxHighlighter().highlight(code);
+      case 'cpp':
+      case 'c++': return CppSyntaxHighlighter().highlight(code);
+      case 'html': return HtmlSyntaxHighlighter().highlight(code);
+      case 'css': return CssSyntaxHighlighter().highlight(code);
+      case 'json': return JsonSyntaxHighlighter().highlight(code);
+      case 'yaml':
+      case 'yml': return YamlSyntaxHighlighter().highlight(code);
+      case 'sql': return SqlSyntaxHighlighter().highlight(code);
+      case 'bash':
+      case 'sh': return BashSyntaxHighlighter().highlight(code);
+      default: return TextSpan(text: code, style: const TextStyle(color: kPlainColor));
     }
-  }
-
-  static TextSpan highlight(String code, String? language) {
-    final highlighter = _forLanguage(language);
-    if (highlighter == null) {
-      return TextSpan(
-        text: code,
-        style: const TextStyle(
-          color: Color(0xFFE6EDF3),
-          fontFamily: 'monospace',
-          fontSize: 13,
-          height: 1.5,
-        ),
-      );
-    }
-    return highlighter._highlight(code);
-  }
-
-  TextSpan _highlight(String code) => TextSpan(text: code);
-
-  static const kKeywordColor = Color(0xFF7C3AED);
-  static const kStringColor = Color(0xFF34D399);
-  static const kNumberColor = Color(0xFFF59E0B);
-  static const kCommentColor = Color(0xFF6B7280);
-  static const kTypeColor = Color(0xFF38BDF8);
-  static const kFunctionColor = Color(0xFFFBBF24);
-  static const kOperatorColor = Color(0xFFE8E8E8);
-  static const kPunctuationColor = Color(0xFF9CA3AF);
-  static const kVariableColor = Color(0xFFE6EDF3);
-  static const kAttributeColor = Color(0xFFA78BFA);
-  static const kTagColor = Color(0xFFEF4444);
-  static const kBuiltinColor = Color(0xFF60A5FA);
-  static const kAnnotationColor = Color(0xFFA855F7);
-  static const kPlainColor = Color(0xFFE6EDF3);
-
-  static const kBaseStyle = TextStyle(
-    fontFamily: 'monospace',
-    fontSize: 13,
-    height: 1.5,
-  );
-
-  List<TextSpan> _tokenize(String code, List<_TokenRule> rules) {
-    final spans = <TextSpan>[];
-    int i = 0;
-    while (i < code.length) {
-      bool matched = false;
-      for (final rule in rules) {
-        final match = rule.pattern.matchAsPrefix(code, i);
-        if (match != null) {
-          spans.add(TextSpan(
-            text: match.group(0),
-            style: kBaseStyle.copyWith(color: rule.color),
-          ));
-          i += match.group(0)!.length;
-          matched = true;
-          break;
-        }
-      }
-      if (!matched) {
-        final char = code[i];
-        final color = char == '\n' ? kPlainColor : kPlainColor;
-        spans.add(TextSpan(
-          text: char,
-          style: kBaseStyle.copyWith(color: color),
-        ));
-        i++;
-      }
-    }
-    return spans;
   }
 }
 
@@ -99,379 +55,253 @@ class _TokenRule {
   const _TokenRule(this.pattern, this.color);
 }
 
-class DartSyntaxHighlighter extends SyntaxHighlighter {
-  @override
-  TextSpan _highlight(String code) {
-    final rules = [
-      _TokenRule(RegExp(r'//.*'), SyntaxHighlighter.kCommentColor__),
-      _TokenRule(RegExp(r'/\*[\s\S]*?\*/'), SyntaxHighlighter.kCommentColor__),
-      _TokenRule(RegExp(r'"""[\s\S]*?"""'), SyntaxHighlighter.kStringColor__),
-      _TokenRule(RegExp(r"'''[\s\S]*?'''"), SyntaxHighlighter.kStringColor__),
-      _TokenRule(RegExp(r'"(?:[^"\\]|\\.)*"'), SyntaxHighlighter.kStringColor__),
-      _TokenRule(RegExp(r"'(?:[^'\\]|\\.)*'"), SyntaxHighlighter.kStringColor__),
-      _TokenRule(RegExp(r'r"[^"]*"'), SyntaxHighlighter.kStringColor__),
-      _TokenRule(RegExp("r'[^']*'"), SyntaxHighlighter.kStringColor__),
-      _TokenRule(RegExp(r'\b(?:import|export|library|part|of|as|show|hide|abstract|class|extends|implements|mixin|with|enum|typedef|extension|on|covariant|@override|@deprecated|@required|late|final|const|var|void|int|double|num|String|bool|dynamic|Null|Object|Future|Stream|List|Set|Map|Record|never|throw|rethrow|try|catch|on|finally|return|break|continue|if|else|for|while|do|switch|case|default|assert|async|await|yield|sync|static|external|factory|get|set|operator|new|this|super|true|false|null|is|is!|as|in)\b'), SyntaxHighlighter.kKeywordColor__),
-      _TokenRule(RegExp(r'\b(?:print|printError|printToConsole|identical|identityHashCode|identical|runtimeType|hashCode|toString|noSuchMethod|runtimeType)\b'), SyntaxHighlighter.kBuiltinColor__),
-      _TokenRule(RegExp(r'\b0[xX][0-9a-fA-F]+\b'), SyntaxHighlighter.kNumberColor__),
-      _TokenRule(RegExp(r'\b\d+\.?\d*(?:[eE][+-]?\d+)?\b'), SyntaxHighlighter.kNumberColor__),
-      _TokenRule(RegExp(r'@\w+'), SyntaxHighlighter.kAnnotationColor__),
-      _TokenRule(RegExp(r'\b[A-Z][a-zA-Z0-9]*\b'), SyntaxHighlighter.kTypeColor__),
-      _TokenRule(RegExp(r'\b[a-z_]\w*(?=\s*\()'), SyntaxHighlighter.kFunctionColor__),
-      _TokenRule(RegExp(r'=>|[+\-*/%&|^~<>!?=]+'), SyntaxHighlighter.kOperatorColor__),
-      _TokenRule(RegExp(r'[{}[\]();.,:]'), SyntaxHighlighter.kPunctuationColor__),
-    ];
-    final spans = _tokenize(code, rules);
-    return TextSpan(children: spans, style: SyntaxHighlighter.kBaseStyle__);
+TextSpan _buildSpans(String code, List<_TokenRule> rules, Color defaultColor) {
+  final spans = <TextSpan>[];
+  int pos = 0;
+
+  while (pos < code.length) {
+    int earliestMatch = code.length;
+    _TokenRule? matchedRule;
+    Match? matched;
+
+    for (final rule in rules) {
+      final m = rule.pattern.matchAsPrefix(code, pos);
+      if (m != null && m.start < earliestMatch) {
+        earliestMatch = m.start;
+        matchedRule = rule;
+        matched = m;
+        if (earliestMatch == pos) break;
+      }
+    }
+
+    if (matchedRule != null && matched != null) {
+      if (earliestMatch > pos) {
+        spans.add(TextSpan(
+          text: code.substring(pos, earliestMatch),
+          style: TextStyle(color: defaultColor),
+        ));
+      }
+      spans.add(TextSpan(
+        text: matched.group(0),
+        style: TextStyle(color: matchedRule.color),
+      ));
+      pos = earliestMatch + matched.group(0)!.length;
+    } else {
+      spans.add(TextSpan(
+        text: code.substring(pos),
+        style: TextStyle(color: defaultColor),
+      ));
+      break;
+    }
   }
+  return TextSpan(children: spans);
 }
 
-class PythonSyntaxHighlighter extends SyntaxHighlighter {
-  @override
-  TextSpan _highlight(String code) {
-    final rules = [
-      _TokenRule(RegExp(r'#.*'), SyntaxHighlighter.kCommentColor__),
-      _TokenRule(RegExp(r'"""[\s\S]*?"""'), SyntaxHighlighter.kStringColor__),
-      _TokenRule(RegExp(r"'''[\s\S]*?'''"), SyntaxHighlighter.kStringColor__),
-      _TokenRule(RegExp(r'[fF]?(?:"(?:[^"\\]|\\.)*")'), SyntaxHighlighter.kStringColor__),
-      _TokenRule(RegExp(r'\b(?:def|class|if|elif|else|for|while|try|except|finally|with|as|import|from|pass|break|continue|return|yield|lambda|and|or|not|is|in|True|False|None|raise|async|await|global|nonlocal|del|assert|self|super)\b'), SyntaxHighlighter.kKeywordColor__),
-      _TokenRule(RegExp(r'\b(?:print|len|range|int|str|float|list|dict|set|tuple|bool|open|sorted|enumerate|zip|map|filter|type|isinstance|hasattr|getattr|setattr|super|object|staticmethod|classmethod|property)\b'), SyntaxHighlighter.kBuiltinColor__),
-      _TokenRule(RegExp(r'\b0[xX][0-9a-fA-F]+\b'), SyntaxHighlighter.kNumberColor__),
-      _TokenRule(RegExp(r'\b\d+\.?\d*(?:[eE][+-]?\d+)?\b'), SyntaxHighlighter.kNumberColor__),
-      _TokenRule(RegExp(r'@\w+'), SyntaxHighlighter.kAnnotationColor__),
-      _TokenRule(RegExp(r'\b[A-Z][a-zA-Z0-9]*\b'), SyntaxHighlighter.kTypeColor__),
-      _TokenRule(RegExp(r'\b[a-z_]\w*(?=\s*\()'), SyntaxHighlighter.kFunctionColor__),
-      _TokenRule(RegExp(r'=>|[+\-*/%&|^~<>!?=]+'), SyntaxHighlighter.kOperatorColor__),
-      _TokenRule(RegExp(r'[{}[\]();.,:]'), SyntaxHighlighter.kPunctuationColor__),
-    ];
-    final spans = _tokenize(code, rules);
-    return TextSpan(children: spans, style: SyntaxHighlighter.kBaseStyle__);
-  }
+// ==================== LANGUAGE DEFINITIONS ====================
+
+class DartSyntaxHighlighter {
+  static final List<_TokenRule> _rules = [
+    _TokenRule(RegExp(r'//[^\n]*'), SyntaxHighlighter.kCommentColor),
+    _TokenRule(RegExp(r'/\*[\s\S]*?\*/'), SyntaxHighlighter.kCommentColor),
+    _TokenRule(RegExp(r'\b(?:import|export|library|part|of|class|extends|implements|with|mixin|abstract|typedef|enum|final|const|var|void|int|double|num|bool|String|dynamic|Future|Stream|async|await|return|if|else|for|while|do|switch|case|default|break|continue|throw|try|catch|finally|new|this|super|static|factory|override|required|late|covariant|is|as|in|null|true|false|null|assert|rethrow)\b'), SyntaxHighlighter.kKeywordColor),
+    SyntaxHighlighter.kDoubleQuote,
+    SyntaxHighlighter.kSingleQuote,
+    _TokenRule(RegExp(r"'''[\s\S]*?'''"), SyntaxHighlighter.kStringColor),
+    _TokenRule(RegExp(r'r"[^"]*"'), SyntaxHighlighter.kStringColor),
+    _TokenRule(RegExp(r"r'[^']*'"), SyntaxHighlighter.kStringColor),
+    SyntaxHighlighter.kNumber,
+  ];
+
+  TextSpan highlight(String code) => _buildSpans(code, _rules, SyntaxHighlighter.kPlainColor);
 }
 
-class JavaScriptSyntaxHighlighter extends SyntaxHighlighter {
-  @override
-  TextSpan _highlight(String code) {
-    final rules = [
-      _TokenRule(RegExp(r'//.*'), SyntaxHighlighter.kCommentColor__),
-      _TokenRule(RegExp(r'/\*[\s\S]*?\*/'), SyntaxHighlighter.kCommentColor__),
-      _TokenRule(RegExp(r'`(?:[^`\\]|\\.)*`'), SyntaxHighlighter.kStringColor__),
-      _TokenRule(RegExp(r'/(?:[^/\\\n]|\\.)+/[gimsuy]*'), SyntaxHighlighter.kStringColor__),
-      _TokenRule(RegExp(r'"(?:[^"\\]|\\.)*"'), SyntaxHighlighter.kStringColor__),
-      _TokenRule(RegExp(r"'(?:[^'\\]|\\.)*'"), SyntaxHighlighter.kStringColor__),
-      _TokenRule(RegExp(r'\b(?:const|let|var|function|class|extends|implements|interface|type|enum|import|export|from|default|async|await|yield|return|if|else|for|while|do|switch|case|break|continue|try|catch|finally|throw|new|this|super|typeof|instanceof|void|delete|in|of|true|false|null|undefined|NaN)\b'), SyntaxHighlighter.kKeywordColor__),
-      _TokenRule(RegExp(r'\b(?:console|Math|JSON|Promise|Array|Object|String|Number|Boolean|Map|Set|Symbol|Date|RegExp|Error|setTimeout|setInterval|fetch|document|window|module|require|process)\b'), SyntaxHighlighter.kBuiltinColor__),
-      _TokenRule(RegExp(r'\b0[xX][0-9a-fA-F]+\b'), SyntaxHighlighter.kNumberColor__),
-      _TokenRule(RegExp(r'\b\d+\.?\d*(?:[eE][+-]?\d+)?\b'), SyntaxHighlighter.kNumberColor__),
-      _TokenRule(RegExp(r'\b[A-Z][a-zA-Z0-9]*\b'), SyntaxHighlighter.kTypeColor__),
-      _TokenRule(RegExp(r'\b[a-z_$]\w*(?=\s*\()'), SyntaxHighlighter.kFunctionColor__),
-      _TokenRule(RegExp(r'=>|[+\-*/%&|^~<>!?=]+'), SyntaxHighlighter.kOperatorColor__),
-      _TokenRule(RegExp(r'[{}[\]();.,:?]'), SyntaxHighlighter.kPunctuationColor__),
-    ];
-    final spans = _tokenize(code, rules);
-    return TextSpan(children: spans, style: SyntaxHighlighter.kBaseStyle__);
-  }
+class PythonSyntaxHighlighter {
+  static final List<_TokenRule> _rules = [
+    _TokenRule(RegExp(r'#[^\n]*'), SyntaxHighlighter.kCommentColor),
+    _TokenRule(RegExp(r'"""(?:[^"]*(?:""?)?)*"""'), SyntaxHighlighter.kStringColor),
+    _TokenRule(RegExp(r"'''(?:[^']*(?:''?)?)*'''"), SyntaxHighlighter.kStringColor),
+    _TokenRule(RegExp(r'\b(?:def|class|return|if|elif|else|for|while|try|except|finally|with|as|import|from|pass|break|continue|raise|yield|lambda|self|None|True|False|and|or|not|in|is|async|await|print|len|range|int|float|str|bool|list|dict|set|tuple|type|super|global|nonlocal|del|assert)\b'), SyntaxHighlighter.kKeywordColor),
+    SyntaxHighlighter.kDoubleQuote,
+    SyntaxHighlighter.kSingleQuote,
+    SyntaxHighlighter.kNumber,
+  ];
+
+  TextSpan highlight(String code) => _buildSpans(code, _rules, SyntaxHighlighter.kPlainColor);
 }
 
-class JavaSyntaxHighlighter extends SyntaxHighlighter {
-  @override
-  TextSpan _highlight(String code) {
-    final rules = [
-      _TokenRule(RegExp(r'//.*'), SyntaxHighlighter.kCommentColor__),
-      _TokenRule(RegExp(r'/\*[\s\S]*?\*/'), SyntaxHighlighter.kCommentColor__),
-      _TokenRule(RegExp(r'"(?:[^"\\]|\\.)*"'), SyntaxHighlighter.kStringColor__),
-      _TokenRule(RegExp(r"'(?:[^'\\]|\\.)'"), SyntaxHighlighter.kStringColor__),
-      _TokenRule(RegExp(r'\b(?:public|private|protected|static|final|abstract|class|interface|extends|implements|enum|import|package|void|int|long|double|float|boolean|char|byte|short|null|true|false|if|else|for|while|do|switch|case|break|continue|return|throw|throws|try|catch|finally|new|this|super|synchronized|volatile|transient|native|strictfp|assert|default|instanceof|var|record|sealed|permits)\b'), SyntaxHighlighter.kKeywordColor__),
-      _TokenRule(RegExp(r'@\w+'), SyntaxHighlighter.kAnnotationColor__),
-      _TokenRule(RegExp(r'\b[A-Z][a-zA-Z0-9]*\b'), SyntaxHighlighter.kTypeColor__),
-      _TokenRule(RegExp(r'\b[a-z_]\w*(?=\s*\()'), SyntaxHighlighter.kFunctionColor__),
-      _TokenRule(RegExp(r'\b0[xX][0-9a-fA-F]+\b'), SyntaxHighlighter.kNumberColor__),
-      _TokenRule(RegExp(r'\b\d+\.?\d*(?:[eE][+-]?\d+)?[fFdD]?\b'), SyntaxHighlighter.kNumberColor__),
-      _TokenRule(RegExp(r'=>|[+\-*/%&|^~<>!?=]+'), SyntaxHighlighter.kOperatorColor__),
-      _TokenRule(RegExp(r'[{}[\]();.,:]'), SyntaxHighlighter.kPunctuationColor__),
-    ];
-    final spans = _tokenize(code, rules);
-    return TextSpan(children: spans, style: SyntaxHighlighter.kBaseStyle__);
-  }
+class JavaScriptSyntaxHighlighter {
+  static final List<_TokenRule> _rules = [
+    _TokenRule(RegExp(r'//[^\n]*'), SyntaxHighlighter.kCommentColor),
+    _TokenRule(RegExp(r'/\*[\s\S]*?\*/'), SyntaxHighlighter.kCommentColor),
+    _TokenRule(RegExp(r'\b(?:const|let|var|function|return|if|else|for|while|do|switch|case|break|continue|new|this|class|extends|import|export|from|async|await|try|catch|finally|throw|typeof|instanceof|in|of|null|undefined|true|false|yield|delete|void)\b'), SyntaxHighlighter.kKeywordColor),
+    SyntaxHighlighter.kDoubleQuote,
+    SyntaxHighlighter.kSingleQuote,
+    _TokenRule(RegExp(r'`[^`]*`'), SyntaxHighlighter.kStringColor),
+    SyntaxHighlighter.kNumber,
+  ];
+
+  TextSpan highlight(String code) => _buildSpans(code, _rules, SyntaxHighlighter.kPlainColor);
 }
 
-class KotlinSyntaxHighlighter extends SyntaxHighlighter {
-  @override
-  TextSpan _highlight(String code) {
-    final rules = [
-      _TokenRule(RegExp(r'//.*'), SyntaxHighlighter.kCommentColor__),
-      _TokenRule(RegExp(r'/\*[\s\S]*?\*/'), SyntaxHighlighter.kCommentColor__),
-      _TokenRule(RegExp(r'"""[\s\S]*?"""'), SyntaxHighlighter.kStringColor__),
-      _TokenRule(RegExp(r'"(?:[^"\\]|\\.)*"'), SyntaxHighlighter.kStringColor__),
-      _TokenRule(RegExp(r"'(?:[^'\\]|\\.)'"), SyntaxHighlighter.kStringColor__),
-      _TokenRule(RegExp(r'\b(?:fun|val|var|class|object|companion|interface|enum|sealed|data|inner|abstract|open|override|private|protected|internal|public|final|lateinit|init|constructor|import|package|as|typealias|where|if|else|when|for|while|do|try|catch|finally|throw|return|break|continue|null|true|false|is|!is|in|!in|as|as?|this|super|suspend|tailrec|crossinline|noinline|inline|operator|infix|vararg|annotation|reified|expect|actual)\b'), SyntaxHighlighter.kKeywordColor__),
-      _TokenRule(RegExp(r'@\w+'), SyntaxHighlighter.kAnnotationColor__),
-      _TokenRule(RegExp(r'\b[A-Z][a-zA-Z0-9]*\b'), SyntaxHighlighter.kTypeColor__),
-      _TokenRule(RegExp(r'\b[a-z_]\w*(?=\s*\()'), SyntaxHighlighter.kFunctionColor__),
-      _TokenRule(RegExp(r'\b0[xX][0-9a-fA-F]+\b'), SyntaxHighlighter.kNumberColor__),
-      _TokenRule(RegExp(r'\b\d+\.?\d*(?:[eE][+-]?\d+)?\b'), SyntaxHighlighter.kNumberColor__),
-      _TokenRule(RegExp(r'=>|[+\-*/%&|^~<>!?=]+'), SyntaxHighlighter.kOperatorColor__),
-      _TokenRule(RegExp(r'[{}[\]();.,:]'), SyntaxHighlighter.kPunctuationColor__),
-    ];
-    final spans = _tokenize(code, rules);
-    return TextSpan(children: spans, style: SyntaxHighlighter.kBaseStyle__);
-  }
+class TypeScriptSyntaxHighlighter {
+  static final List<_TokenRule> _rules = [
+    _TokenRule(RegExp(r'//[^\n]*'), SyntaxHighlighter.kCommentColor),
+    _TokenRule(RegExp(r'/\*[\s\S]*?\*/'), SyntaxHighlighter.kCommentColor),
+    _TokenRule(RegExp(r'\b(?:const|let|var|function|return|if|else|for|while|do|switch|case|break|continue|new|this|class|extends|implements|import|export|from|async|await|try|catch|finally|throw|typeof|instanceof|in|of|null|undefined|true|false|yield|type|interface|enum|namespace|module|declare|readonly|public|private|protected|abstract|static|keyof)\b'), SyntaxHighlighter.kKeywordColor),
+    SyntaxHighlighter.kDoubleQuote,
+    SyntaxHighlighter.kSingleQuote,
+    _TokenRule(RegExp(r'`[^`]*`'), SyntaxHighlighter.kStringColor),
+    SyntaxHighlighter.kNumber,
+  ];
+
+  TextSpan highlight(String code) => _buildSpans(code, _rules, SyntaxHighlighter.kPlainColor);
 }
 
-class SwiftSyntaxHighlighter extends SyntaxHighlighter {
-  @override
-  TextSpan _highlight(String code) {
-    final rules = [
-      _TokenRule(RegExp(r'//.*'), SyntaxHighlighter.kCommentColor__),
-      _TokenRule(RegExp(r'/\*[\s\S]*?\*/'), SyntaxHighlighter.kCommentColor__),
-      _TokenRule(RegExp(r'"(?:[^"\\]|\\.)*"'), SyntaxHighlighter.kStringColor__),
-      _TokenRule(RegExp(r"'(?:[^'\\]|\\.)'"), SyntaxHighlighter.kStringColor__),
-      _TokenRule(RegExp(r'\b(?:func|var|let|class|struct|enum|protocol|extension|init|deinit|import|as|is|if|else|guard|for|while|repeat|switch|case|break|continue|return|throw|throws|rethrows|try|catch|do|where|true|false|nil|self|super|in|out|inout|public|private|fileprivate|internal|open|static|final|override|weak|unowned|lazy|mutating|nonmutating|required|optional|convenience|dynamic|available|async|await|actor|nonisolated|isolated|some|any)\b'), SyntaxHighlighter.kKeywordColor__),
-      _TokenRule(RegExp(r'@\w+'), SyntaxHighlighter.kAnnotationColor__),
-      _TokenRule(RegExp(r'\b[A-Z][a-zA-Z0-9]*\b'), SyntaxHighlighter.kTypeColor__),
-      _TokenRule(RegExp(r'\b[a-z_]\w*(?=\s*\()'), SyntaxHighlighter.kFunctionColor__),
-      _TokenRule(RegExp(r'\b0[xX][0-9a-fA-F]+\b'), SyntaxHighlighter.kNumberColor__),
-      _TokenRule(RegExp(r'\b\d+\.?\d*(?:[eE][+-]?\d+)?\b'), SyntaxHighlighter.kNumberColor__),
-      _TokenRule(RegExp(r'=>|[+\-*/%&|^~<>!?=]+'), SyntaxHighlighter.kOperatorColor__),
-      _TokenRule(RegExp(r'[{}[\]();.,:]'), SyntaxHighlighter.kPunctuationColor__),
-    ];
-    final spans = _tokenize(code, rules);
-    return TextSpan(children: spans, style: SyntaxHighlighter.kBaseStyle__);
-  }
+class JavaSyntaxHighlighter {
+  static final List<_TokenRule> _rules = [
+    _TokenRule(RegExp(r'//[^\n]*'), SyntaxHighlighter.kCommentColor),
+    _TokenRule(RegExp(r'/\*[\s\S]*?\*/'), SyntaxHighlighter.kCommentColor),
+    _TokenRule(RegExp(r'\b(?:public|private|protected|static|final|class|interface|extends|implements|abstract|new|this|super|return|if|else|for|while|do|switch|case|break|continue|try|catch|finally|throw|import|package|void|int|long|double|float|boolean|char|byte|short|String|List|Map|Set|ArrayList|HashMap|HashSet|true|false|null|instanceof|enum|record|var|synchronized|volatile|transient|native|strictfp)\b'), SyntaxHighlighter.kKeywordColor),
+    SyntaxHighlighter.kDoubleQuote,
+    SyntaxHighlighter.kSingleQuote,
+    SyntaxHighlighter.kNumber,
+  ];
+
+  TextSpan highlight(String code) => _buildSpans(code, _rules, SyntaxHighlighter.kPlainColor);
 }
 
-class RustSyntaxHighlighter extends SyntaxHighlighter {
-  @override
-  TextSpan _highlight(String code) {
-    final rules = [
-      _TokenRule(RegExp(r'//.*'), SyntaxHighlighter.kCommentColor__),
-      _TokenRule(RegExp(r'/\*[\s\S]*?\*/'), SyntaxHighlighter.kCommentColor__),
-      _TokenRule(RegExp(r'r#?"(?:[^"\\]|\\.)*"'), SyntaxHighlighter.kStringColor__),
-      _TokenRule(RegExp(r"'(?:[^'\\]|\\.)'"), SyntaxHighlighter.kStringColor__),
-      _TokenRule(RegExp(r'\b(?:fn|let|mut|const|static|struct|enum|trait|impl|type|mod|use|crate|self|super|pub|unsafe|async|await|move|ref|return|if|else|for|while|loop|match|break|continue|where|as|in|true|false|Some|None|Ok|Err|Box|Vec|String|Option|Result|dyn|impl|abstract|become|box|do|final|macro|override|priv|typeof|unsized|virtual|yield)\b'), SyntaxHighlighter.kKeywordColor__),
-      _TokenRule(RegExp(r'#!?\[.*?\]'), SyntaxHighlighter.kAnnotationColor__),
-      _TokenRule(RegExp(r'\b[A-Z][a-zA-Z0-9]*\b'), SyntaxHighlighter.kTypeColor__),
-      _TokenRule(RegExp(r'\b[a-z_]\w*(?=\s*\()'), SyntaxHighlighter.kFunctionColor__),
-      _TokenRule(RegExp(r'\b0[xXoObB][0-9a-fA-F]+\b'), SyntaxHighlighter.kNumberColor__),
-      _TokenRule(RegExp(r'\b\d+\.?\d*(?:[eE][+-]?\d+)?\b'), SyntaxHighlighter.kNumberColor__),
-      _TokenRule(RegExp(r'=>|[+\-*/%&|^~<>!?=]+'), SyntaxHighlighter.kOperatorColor__),
-      _TokenRule(RegExp(r'[{}[\]();.,:]'), SyntaxHighlighter.kPunctuationColor__),
-    ];
-    final spans = _tokenize(code, rules);
-    return TextSpan(children: spans, style: SyntaxHighlighter.kBaseStyle__);
-  }
+class KotlinSyntaxHighlighter {
+  static final List<_TokenRule> _rules = [
+    _TokenRule(RegExp(r'//[^\n]*'), SyntaxHighlighter.kCommentColor),
+    _TokenRule(RegExp(r'/\*[\s\S]*?\*/'), SyntaxHighlighter.kCommentColor),
+    _TokenRule(RegExp(r'\b(?:fun|val|var|class|object|interface|abstract|open|override|private|public|protected|internal|data|sealed|enum|companion|init|constructor|import|package|return|if|else|for|while|do|when|try|catch|finally|throw|break|continue|new|this|super|null|true|false|is|as|in|typealias|inline|infix|suspend|lateinit|lazy|let|apply|run|also|with)\b'), SyntaxHighlighter.kKeywordColor),
+    SyntaxHighlighter.kDoubleQuote,
+    _TokenRule(RegExp(r'"""[^"]*"""'), SyntaxHighlighter.kStringColor),
+    SyntaxHighlighter.kNumber,
+  ];
+
+  TextSpan highlight(String code) => _buildSpans(code, _rules, SyntaxHighlighter.kPlainColor);
 }
 
-class GoSyntaxHighlighter extends SyntaxHighlighter {
-  @override
-  TextSpan _highlight(String code) {
-    final rules = [
-      _TokenRule(RegExp(r'//.*'), SyntaxHighlighter.kCommentColor__),
-      _TokenRule(RegExp(r'/\*[\s\S]*?\*/'), SyntaxHighlighter.kCommentColor__),
-      _TokenRule(RegExp(r'"(?:[^"\\]|\\.)*"'), SyntaxHighlighter.kStringColor__),
-      _TokenRule(RegExp(r'`[^`]*`'), SyntaxHighlighter.kStringColor__),
-      _TokenRule(RegExp(r"'(?:[^'\\]|\\.)'"), SyntaxHighlighter.kStringColor__),
-      _TokenRule(RegExp(r'\b(?:func|struct|interface|map|chan|go|defer|select|package|import|type|var|const|return|if|else|for|range|switch|case|break|continue|fallthrough|default|goto|nil|true|false|make|new|append|len|cap|copy|close|delete|panic|recover|print|println|error|string|int|int8|int16|int32|int64|uint|uint8|uint16|uint32|uint64|float32|float64|complex64|complex128|byte|rune|bool|uintptr)\b'), SyntaxHighlighter.kKeywordColor__),
-      _TokenRule(RegExp(r'\b[A-Z][a-zA-Z0-9]*\b'), SyntaxHighlighter.kTypeColor__),
-      _TokenRule(RegExp(r'\b[a-z_]\w*(?=\s*\()'), SyntaxHighlighter.kFunctionColor__),
-      _TokenRule(RegExp(r'\b0[xX][0-9a-fA-F]+\b'), SyntaxHighlighter.kNumberColor__),
-      _TokenRule(RegExp(r'\b\d+\.?\d*(?:[eE][+-]?\d+)?\b'), SyntaxHighlighter.kNumberColor__),
-      _TokenRule(RegExp(r'=>|[+\-*/%&|^~<>!?=]+'), SyntaxHighlighter.kOperatorColor__),
-      _TokenRule(RegExp(r'[{}[\]();.,:]'), SyntaxHighlighter.kPunctuationColor__),
-    ];
-    final spans = _tokenize(code, rules);
-    return TextSpan(children: spans, style: SyntaxHighlighter.kBaseStyle__);
-  }
+class RustSyntaxHighlighter {
+  static final List<_TokenRule> _rules = [
+    _TokenRule(RegExp(r'//[^\n]*'), SyntaxHighlighter.kCommentColor),
+    _TokenRule(RegExp(r'/\*[\s\S]*?\*/'), SyntaxHighlighter.kCommentColor),
+    _TokenRule(RegExp(r'\b(?:fn|let|mut|const|static|struct|enum|impl|trait|use|mod|crate|pub|super|self|return|if|else|for|while|loop|match|break|continue|unsafe|async|await|true|false|Some|None|Ok|Err|where|as|in|ref|move|dyn|type|macro_rules|derive|extern|abstract|final|override|typeof|box|virtual|yield|union|all|any|not|and|or)\b'), SyntaxHighlighter.kKeywordColor),
+    SyntaxHighlighter.kDoubleQuote,
+    SyntaxHighlighter.kSingleQuote,
+    _TokenRule(RegExp(r'r#"[^"]*"#'), SyntaxHighlighter.kStringColor),
+    SyntaxHighlighter.kNumber,
+  ];
+
+  TextSpan highlight(String code) => _buildSpans(code, _rules, SyntaxHighlighter.kPlainColor);
 }
 
-class CSyntaxHighlighter extends SyntaxHighlighter {
-  @override
-  TextSpan _highlight(String code) {
-    final rules = [
-      _TokenRule(RegExp(r'//.*'), SyntaxHighlighter.kCommentColor__),
-      _TokenRule(RegExp(r'/\*[\s\S]*?\*/'), SyntaxHighlighter.kCommentColor__),
-      _TokenRule(RegExp(r'"(?:[^"\\]|\\.)*"'), SyntaxHighlighter.kStringColor__),
-      _TokenRule(RegExp(r"'(?:[^'\\]|\\.)'"), SyntaxHighlighter.kStringColor__),
-      _TokenRule(RegExp(r'@"(?:[^"]|"")*"'), SyntaxHighlighter.kStringColor__),
-      _TokenRule(RegExp(r'\b(?:int|long|double|float|char|bool|void|string|var|dynamic|object|byte|short|uint|ulong|ushort|nint|nuint|null|true|false|if|else|for|foreach|while|do|switch|case|break|continue|return|throw|try|catch|finally|class|struct|interface|enum|record|new|this|base|base|as|is|in|out|ref|readonly|const|static|virtual|override|abstract|sealed|async|await|yield|lock|checked|unchecked|unsafe|fixed|stackalloc|sizeof|nameof|using|namespace|public|private|protected|internal|partial|extern|event|delegate|operator|implicit|explicit|get|set|value|add|remove|where|select|from|let|join|on|equals|into|orderby|ascending|descending|group|by|namespace)\b'), SyntaxHighlighter.kKeywordColor__),
-      _TokenRule(RegExp(r'@\w+'), SyntaxHighlighter.kAnnotationColor__),
-      _TokenRule(RegExp(r'\b[A-Z][a-zA-Z0-9]*\b'), SyntaxHighlighter.kTypeColor__),
-      _TokenRule(RegExp(r'\b[a-z_]\w*(?=\s*\()'), SyntaxHighlighter.kFunctionColor__),
-      _TokenRule(RegExp(r'\b0[xX][0-9a-fA-F]+\b'), SyntaxHighlighter.kNumberColor__),
-      _TokenRule(RegExp(r'\b\d+\.?\d*(?:[eE][+-]?\d+)?[fFdDmM]?\b'), SyntaxHighlighter.kNumberColor__),
-      _TokenRule(RegExp(r'=>|[+\-*/%&|^~<>!?=]+'), SyntaxHighlighter.kOperatorColor__),
-      _TokenRule(RegExp(r'[{}[\]();.,:]'), SyntaxHighlighter.kPunctuationColor__),
-    ];
-    final spans = _tokenize(code, rules);
-    return TextSpan(children: spans, style: SyntaxHighlighter.kBaseStyle__);
-  }
+class GoSyntaxHighlighter {
+  static final List<_TokenRule> _rules = [
+    _TokenRule(RegExp(r'//[^\n]*'), SyntaxHighlighter.kCommentColor),
+    _TokenRule(RegExp(r'/\*[\s\S]*?\*/'), SyntaxHighlighter.kCommentColor),
+    _TokenRule(RegExp(r'\b(?:func|var|const|type|struct|interface|map|chan|go|defer|select|range|return|if|else|for|switch|case|break|continue|fallthrough|default|import|package|true|false|nil|make|new|len|cap|append|copy|close|delete|panic|recover|int|int8|int16|int32|int64|uint|uint8|uint16|uint32|uint64|float32|float64|string|bool|byte|rune|complex64|complex128|error)\b'), SyntaxHighlighter.kKeywordColor),
+    SyntaxHighlighter.kDoubleQuote,
+    SyntaxHighlighter.kSingleQuote,
+    _TokenRule(RegExp(r'`[^`]*`'), SyntaxHighlighter.kStringColor),
+    SyntaxHighlighter.kNumber,
+  ];
+
+  TextSpan highlight(String code) => _buildSpans(code, _rules, SyntaxHighlighter.kPlainColor);
 }
 
-class HtmlSyntaxHighlighter extends SyntaxHighlighter {
-  @override
-  TextSpan _highlight(String code) {
-    final rules = [
-      _TokenRule(RegExp(r'<!--[\s\S]*?-->'), SyntaxHighlighter.kCommentColor__),
-      _TokenRule(RegExp(r'<[a-zA-Z][a-zA-Z0-9]*'), SyntaxHighlighter.kTagColor__),
-      _TokenRule(RegExp(r'</[a-zA-Z][a-zA-Z0-9]*>'), SyntaxHighlighter.kTagColor__),
-      _TokenRule(RegExp(r'/>'), SyntaxHighlighter.kTagColor__),
-      _TokenRule(RegExp(r'\b[a-zA-Z-]+(?=\s*=)'), SyntaxHighlighter.kAttributeColor__),
-      _TokenRule(RegExp(r'"(?:[^"\\]|\\.)*"'), SyntaxHighlighter.kStringColor__),
-      _TokenRule(RegExp(r"'(?:[^'\\]|\\.)*'"), SyntaxHighlighter.kStringColor__),
-      _TokenRule(RegExp(r'[{}]'), SyntaxHighlighter.kPunctuationColor__),
-    ];
-    final spans = _tokenize(code, rules);
-    return TextSpan(children: spans, style: SyntaxHighlighter.kBaseStyle__);
-  }
+class CSyntaxHighlighter {
+  static final List<_TokenRule> _rules = [
+    _TokenRule(RegExp(r'//[^\n]*'), SyntaxHighlighter.kCommentColor),
+    _TokenRule(RegExp(r'/\*[\s\S]*?\*/'), SyntaxHighlighter.kCommentColor),
+    _TokenRule(RegExp(r'\b(?:if|else|for|while|do|switch|case|break|continue|return|goto|typedef|struct|union|enum|const|static|extern|register|volatile|auto|sizeof|int|long|short|char|float|double|void|unsigned|signed|true|false|NULL|include|define|ifdef|ifndef|endif|pragma)\b'), SyntaxHighlighter.kKeywordColor),
+    SyntaxHighlighter.kDoubleQuote,
+    SyntaxHighlighter.kSingleQuote,
+    SyntaxHighlighter.kNumber,
+  ];
+
+  TextSpan highlight(String code) => _buildSpans(code, _rules, SyntaxHighlighter.kPlainColor);
 }
 
-class CssSyntaxHighlighter extends SyntaxHighlighter {
-  @override
-  TextSpan _highlight(String code) {
-    final rules = [
-      _TokenRule(RegExp(r'/\*[\s\S]*?\*/'), SyntaxHighlighter.kCommentColor__),
-      _TokenRule(RegExp(r'"(?:[^"\\]|\\.)*"'), SyntaxHighlighter.kStringColor__),
-      _TokenRule(RegExp(r"'(?:[^'\\]|\\.)*'"), SyntaxHighlighter.kStringColor__),
-      _TokenRule(RegExp(r'#[0-9a-fA-F]{3,8}\b'), SyntaxHighlighter.kNumberColor__),
-      _TokenRule(RegExp(r'\b\d+\.?\d*(?:px|em|rem|vh|vw|%|s|ms)?\b'), SyntaxHighlighter.kNumberColor__),
-      _TokenRule(RegExp(r'(?:https?:\/\/[^\s;)]+)'), SyntaxHighlighter.kStringColor__),
-      _TokenRule(RegExp(r'[.#]?[a-zA-Z][a-zA-Z0-9_-]*(?=\s*{)'), SyntaxHighlighter.kTagColor__),
-      _TokenRule(RegExp(r'\b[a-zA-Z-]+(?=\s*:)'), SyntaxHighlighter.kAttributeColor__),
-      _TokenRule(RegExp(r'[{};:]'), SyntaxHighlighter.kPunctuationColor__),
-    ];
-    final spans = _tokenize(code, rules);
-    return TextSpan(children: spans, style: SyntaxHighlighter.kBaseStyle__);
-  }
+class CppSyntaxHighlighter {
+  static final List<_TokenRule> _rules = [
+    _TokenRule(RegExp(r'//[^\n]*'), SyntaxHighlighter.kCommentColor),
+    _TokenRule(RegExp(r'/\*[\s\S]*?\*/'), SyntaxHighlighter.kCommentColor),
+    _TokenRule(RegExp(r'\b(?:class|public|private|protected|virtual|override|explicit|constexpr|nullptr|template|typename|namespace|using|new|delete|throw|try|catch|noexcept|auto|decltype|static_cast|dynamic_cast|reinterpret_cast|const_cast|this|friend|operator|inline|export|mutable|volatile|asm|alignas|alignof|and|or|not|xor|bitand|bitor|compl)\b'), SyntaxHighlighter.kKeywordColor),
+    SyntaxHighlighter.kDoubleQuote,
+    SyntaxHighlighter.kSingleQuote,
+    SyntaxHighlighter.kNumber,
+  ];
+
+  TextSpan highlight(String code) => _buildSpans(code, _rules, SyntaxHighlighter.kPlainColor);
 }
 
-class JsonSyntaxHighlighter extends SyntaxHighlighter {
-  @override
-  TextSpan _highlight(String code) {
-    final rules = [
-      _TokenRule(RegExp(r'"(?:[^"\\]|\\.)*"(?=\s*:)'), SyntaxHighlighter.kAttributeColor__),
-      _TokenRule(RegExp(r'"(?:[^"\\]|\\.)*"'), SyntaxHighlighter.kStringColor__),
-      _TokenRule(RegExp(r'\b(?:true|false|null)\b'), SyntaxHighlighter.kKeywordColor__),
-      _TokenRule(RegExp(r'\b-?\d+\.?\d*(?:[eE][+-]?\d+)?\b'), SyntaxHighlighter.kNumberColor__),
-      _TokenRule(RegExp(r'[{}[\]],:'), SyntaxHighlighter.kPunctuationColor__),
-    ];
-    final spans = _tokenize(code, rules);
-    return TextSpan(children: spans, style: SyntaxHighlighter.kBaseStyle__);
-  }
+class HtmlSyntaxHighlighter {
+  static final List<_TokenRule> _rules = [
+    _TokenRule(RegExp(r'<!--[\s\S]*?-->'), SyntaxHighlighter.kCommentColor),
+    _TokenRule(RegExp(r'</?[a-zA-Z][a-zA-Z0-9]*'), SyntaxHighlighter.kTagColor),
+    _TokenRule(RegExp(r'(?<=<)[^>]+(?=>)'), SyntaxHighlighter.kAttributeColor),
+    _TokenRule(RegExp(r'"[^"]*"'), SyntaxHighlighter.kStringColor),
+    SyntaxHighlighter.kSingleQuote,
+  ];
+
+  TextSpan highlight(String code) => _buildSpans(code, _rules, SyntaxHighlighter.kPlainColor);
 }
 
-class YamlSyntaxHighlighter extends SyntaxHighlighter {
-  @override
-  TextSpan _highlight(String code) {
-    final rules = [
-      _TokenRule(RegExp(r'#.*'), SyntaxHighlighter.kCommentColor__),
-      _TokenRule(RegExp(r'---'), SyntaxHighlighter.kPunctuationColor__),
-      _TokenRule(RegExp(r'\.\.\.'), SyntaxHighlighter.kPunctuationColor__),
-      _TokenRule(RegExp(r'"(?:[^"\\]|\\.)*"'), SyntaxHighlighter.kStringColor__),
-      _TokenRule(RegExp(r"'(?:[^'\\]|\\.)*'"), SyntaxHighlighter.kStringColor__),
-      _TokenRule(RegExp(r'^[a-zA-Z][a-zA-Z0-9_]*(\s*):', multiLine: true), SyntaxHighlighter.kAttributeColor__),
-      _TokenRule(RegExp(r'^\s*[a-zA-Z][a-zA-Z0-9_]*(\s*):', multiLine: true), SyntaxHighlighter.kAttributeColor__),
-      _TokenRule(RegExp(r'\b(?:true|false|yes|no|on|off|null)\b'), SyntaxHighlighter.kKeywordColor__),
-      _TokenRule(RegExp(r'\b\d+\.?\d*\b'), SyntaxHighlighter.kNumberColor__),
-      _TokenRule(RegExp(r'[{}[\]],:-'), SyntaxHighlighter.kPunctuationColor__),
-    ];
-    final spans = _tokenize(code, rules);
-    return TextSpan(children: spans, style: SyntaxHighlighter.kBaseStyle__);
-  }
+class CssSyntaxHighlighter {
+  static final List<_TokenRule> _rules = [
+    _TokenRule(RegExp(r'/\*[\s\S]*?\*/'), SyntaxHighlighter.kCommentColor),
+    _TokenRule(RegExp(r'"[^"]*"'), SyntaxHighlighter.kStringColor),
+    SyntaxHighlighter.kNumber,
+  ];
+
+  TextSpan highlight(String code) => _buildSpans(code, _rules, SyntaxHighlighter.kPlainColor);
 }
 
-class MarkdownSyntaxHighlighter extends SyntaxHighlighter {
-  @override
-  TextSpan _highlight(String code) {
-    final rules = [
-      _TokenRule(RegExp(r'^#{1,6}\s.*', multiLine: true), SyntaxHighlighter.kKeywordColor__),
-      _TokenRule(RegExp(r'\*\*.*?\*\*'), SyntaxHighlighter.kKeywordColor__),
-      _TokenRule(RegExp(r'__.*?__'), SyntaxHighlighter.kKeywordColor__),
-      _TokenRule(RegExp(r'\*.*?\*'), SyntaxHighlighter.kFunctionColor__),
-      _TokenRule(RegExp(r'_.*?_'), SyntaxHighlighter.kFunctionColor__),
-      _TokenRule(RegExp(r'`[^`]+`'), SyntaxHighlighter.kStringColor__),
-      _TokenRule(RegExp(r'```[\s\S]*?```'), SyntaxHighlighter.kStringColor__),
-      _TokenRule(RegExp(r'!?\[.*?\]\(.*?\)'), SyntaxHighlighter.kTagColor__),
-      _TokenRule(RegExp(r'^[-*+]\s', multiLine: true), SyntaxHighlighter.kPunctuationColor__),
-      _TokenRule(RegExp(r'^\d+\.\s', multiLine: true), SyntaxHighlighter.kNumberColor__),
-      _TokenRule(RegExp(r'^>\s', multiLine: true), SyntaxHighlighter.kCommentColor__),
-      _TokenRule(RegExp(r'^---+', multiLine: true), SyntaxHighlighter.kPunctuationColor__),
-    ];
-    final spans = _tokenize(code, rules);
-    return TextSpan(children: spans, style: SyntaxHighlighter.kBaseStyle__);
-  }
+class JsonSyntaxHighlighter {
+  static final List<_TokenRule> _rules = [
+    SyntaxHighlighter.kDoubleQuote,
+    SyntaxHighlighter.kNumber,
+    _TokenRule(RegExp(r'\b(?:true|false|null)\b'), SyntaxHighlighter.kKeywordColor),
+  ];
+
+  TextSpan highlight(String code) => _buildSpans(code, _rules, SyntaxHighlighter.kPlainColor);
 }
 
-class SqlSyntaxHighlighter extends SyntaxHighlighter {
-  @override
-  TextSpan _highlight(String code) {
-    final rules = [
-      _TokenRule(RegExp(r'--.*'), SyntaxHighlighter.kCommentColor__),
-      _TokenRule(RegExp(r'/\*[\s\S]*?\*/'), SyntaxHighlighter.kCommentColor__),
-      _TokenRule(RegExp(r"'(?:[^'\\]|\\.)*'"), SyntaxHighlighter.kStringColor__),
-      _TokenRule(RegExp(r'"(?:[^"\\]|\\.)*"'), SyntaxHighlighter.kStringColor__),
-      _TokenRule(RegExp(r'\b(?:SELECT|FROM|WHERE|INSERT|INTO|VALUES|UPDATE|SET|DELETE|CREATE|TABLE|DROP|ALTER|ADD|COLUMN|INDEX|VIEW|JOIN|LEFT|RIGHT|INNER|OUTER|CROSS|ON|AND|OR|NOT|IN|BETWEEN|LIKE|IS|NULL|TRUE|FALSE|ORDER|BY|GROUP|HAVING|LIMIT|OFFSET|UNION|ALL|DISTINCT|AS|CASE|WHEN|THEN|ELSE|END|EXISTS|PRIMARY|KEY|FOREIGN|REFERENCES|CONSTRAINT|DEFAULT|UNIQUE|CHECK|ASC|DESC|COUNT|SUM|AVG|MIN|MAX|CAST|COALESCE|NULLIF|BEGIN|COMMIT|ROLLBACK|SAVEPOINT|GRANT|REVOKE)\b'), SyntaxHighlighter.kKeywordColor__),
-      _TokenRule(RegExp(r'\b\d+\.?\d*\b'), SyntaxHighlighter.kNumberColor__),
-      _TokenRule(RegExp(r'[+\-*/=<>,.;()]'), SyntaxHighlighter.kPunctuationColor__),
-    ];
-    final spans = _tokenize(code, rules);
-    return TextSpan(children: spans, style: SyntaxHighlighter.kBaseStyle__);
-  }
+class YamlSyntaxHighlighter {
+  static final List<_TokenRule> _rules = [
+    _TokenRule(RegExp(r'#[^\n]*'), SyntaxHighlighter.kCommentColor),
+    _TokenRule(RegExp(r'^[a-zA-Z_][a-zA-Z0-9_]*:', multiLine: true), SyntaxHighlighter.kAttributeColor),
+    SyntaxHighlighter.kDoubleQuote,
+    SyntaxHighlighter.kSingleQuote,
+  ] as List<_TokenRule>;
+
+  TextSpan highlight(String code) => _buildSpans(code, _rules, SyntaxHighlighter.kPlainColor);
 }
 
-class BashSyntaxHighlighter extends SyntaxHighlighter {
-  @override
-  TextSpan _highlight(String code) {
-    final rules = [
-      _TokenRule(RegExp(r'#.*'), SyntaxHighlighter.kCommentColor__),
-      _TokenRule(RegExp(r'"(?:[^"\\]|\\.)*"'), SyntaxHighlighter.kStringColor__),
-      _TokenRule(RegExp(r"'(?:[^'\\]|\\.)*'"), SyntaxHighlighter.kStringColor__),
-      _TokenRule(RegExp(r'`(?:[^`\\]|\\.)*`'), SyntaxHighlighter.kStringColor__),
-      _TokenRule(RegExp(r'\b(?:if|then|else|elif|fi|for|while|do|done|case|esac|function|return|exit|break|continue|export|local|readonly|unset|declare|typeset|set|unset|read|echo|printf|source|\.|exec|eval|trap|wait|shift|getopts)\b'), SyntaxHighlighter.kKeywordColor__),
-      _TokenRule(RegExp(r'\b(?:sudo|apt|apt-get|yum|dnf|brew|pip|npm|yarn|git|docker|kubectl|curl|wget|grep|sed|awk|find|xargs|chmod|chown|ls|cd|mkdir|rm|cp|mv|cat|less|more|head|tail|touch|vim|nano)\b'), SyntaxHighlighter.kBuiltinColor__),
-      _TokenRule(RegExp(r'\$\{?\w+\}?'), SyntaxHighlighter.kVariableColor__),
-      _TokenRule(RegExp(r'\b\d+\b'), SyntaxHighlighter.kNumberColor__),
-      _TokenRule(RegExp(r'=>|[+\-*/%&|^~<>!?=]+'), SyntaxHighlighter.kOperatorColor__),
-      _TokenRule(RegExp(r'[{}[\]();.,]'), SyntaxHighlighter.kPunctuationColor__),
-    ];
-    final spans = _tokenize(code, rules);
-    return TextSpan(children: spans, style: SyntaxHighlighter.kBaseStyle__);
-  }
+class SqlSyntaxHighlighter {
+  static final List<_TokenRule> _rules = [
+    _TokenRule(RegExp(r'--[^\n]*'), SyntaxHighlighter.kCommentColor),
+    _TokenRule(RegExp(r'/\*[\s\S]*?\*/'), SyntaxHighlighter.kCommentColor),
+    _TokenRule(RegExp(r'\b(?:SELECT|FROM|WHERE|INSERT|INTO|VALUES|UPDATE|SET|DELETE|CREATE|TABLE|DROP|ALTER|INDEX|VIEW|JOIN|LEFT|RIGHT|INNER|OUTER|ON|AND|OR|NOT|IN|LIKE|BETWEEN|IS|NULL|AS|ORDER|BY|GROUP|HAVING|LIMIT|OFFSET|UNION|ALL|DISTINCT|COUNT|SUM|AVG|MIN|MAX|EXISTS|CASE|WHEN|THEN|ELSE|END|BEGIN|COMMIT|ROLLBACK|PRIMARY|KEY|FOREIGN|REFERENCES|CASCADE|INT|VARCHAR|TEXT|BOOLEAN|DATE|FLOAT|INTEGER|BOOLEAN)\b', caseSensitive: false), SyntaxHighlighter.kKeywordColor),
+    SyntaxHighlighter.kDoubleQuote,
+    SyntaxHighlighter.kSingleQuote,
+    SyntaxHighlighter.kNumber,
+  ] as List<_TokenRule>;
+
+  TextSpan highlight(String code) => _buildSpans(code, _rules, SyntaxHighlighter.kPlainColor);
 }
 
-/// Returns the language identifier for syntax highlighting based on file extension
-String languageFromExtension(String extension) {
-  switch (extension.toLowerCase()) {
-    case 'dart': return 'dart';
-    case 'py': return 'python';
-    case 'js': case 'jsx': case 'mjs': return 'javascript';
-    case 'ts': case 'tsx': return 'typescript';
-    case 'java': return 'java';
-    case 'kt': case 'kts': return 'kotlin';
-    case 'swift': return 'swift';
-    case 'rs': return 'rust';
-    case 'go': return 'go';
-    case 'c': case 'h': return 'c';
-    case 'cpp': case 'cc': case 'cxx': case 'hpp': case 'hxx': return 'cpp';
-    case 'cs': return 'csharp';
-    case 'html': case 'htm': case 'xhtml': return 'html';
-    case 'css': case 'scss': case 'sass': case 'less': return 'css';
-    case 'json': return 'json';
-    case 'xml': case 'svg': case 'plist': return 'xml';
-    case 'yaml': case 'yml': return 'yaml';
-    case 'md': case 'markdown': return 'markdown';
-    case 'sql': return 'sql';
-    case 'sh': case 'bash': case 'zsh': return 'bash';
-    case 'dockerfile': return 'dockerfile';
-    case 'toml': return 'toml';
-    case 'gradle': case 'groovy': return 'groovy';
-    case 'rb': return 'ruby';
-    case 'php': return 'php';
-    case 'pl': case 'pm': return 'perl';
-    case 'lua': return 'lua';
-    case 'r': return 'r';
-    case 'tex': case 'sty': case 'cls': return 'latex';
-    case 'proto': return 'protobuf';
-    case 'graphql': case 'gql': return 'graphql';
-    default: return 'plaintext';
-  }
+class BashSyntaxHighlighter {
+  static final List<_TokenRule> _rules = [
+    _TokenRule(RegExp(r'#[^\n]*'), SyntaxHighlighter.kCommentColor),
+    _TokenRule(RegExp(r'\b(?:if|then|else|elif|fi|for|while|do|done|case|esac|function|return|exit|break|continue|export|local|readonly|unset|declare|typeset|set|unset|read|echo|printf|source|\.|exec|eval|let|shift|select)\b'), SyntaxHighlighter.kKeywordColor),
+    SyntaxHighlighter.kDoubleQuote,
+    SyntaxHighlighter.kSingleQuote,
+    _TokenRule(RegExp(r'`[^`]*`'), SyntaxHighlighter.kStringColor),
+    SyntaxHighlighter.kNumber,
+  ];
+
+  TextSpan highlight(String code) => _buildSpans(code, _rules, SyntaxHighlighter.kPlainColor);
 }
