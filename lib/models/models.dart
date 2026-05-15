@@ -204,15 +204,18 @@ class Conversation {
   String? systemPrompt;
 
   Conversation({
-    required this.id,
+    String? id,
     this.title = 'New Conversation',
     List<ChatMessage>? messages,
     DateTime? createdAt,
     DateTime? updatedAt,
     this.systemPrompt,
-  })  : messages = messages ?? [],
+  })  : id = id ?? 'conv_${DateTime.now().millisecondsSinceEpoch}_${_counter++}',
+        messages = messages ?? [],
         createdAt = createdAt ?? DateTime.now(),
         updatedAt = updatedAt ?? DateTime.now();
+
+  static int _counter = 0;
 
   int get messageCount => messages.length;
   bool get isEmpty => messages.isEmpty;
