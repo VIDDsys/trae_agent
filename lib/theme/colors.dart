@@ -4,6 +4,9 @@ class AppColors {
   AppColors._();
 
   // Core palette extracted from TRAE APK analysis
+  static const Color background = Color(0xFF1A1A2E);
+  static const Color surface = Color(0xFF16213E);
+  static const Color surfaceLight = Color(0xFF1E2A4A);
   static const Color backgroundDark = Color(0xFF1A1A2E);
   static const Color backgroundSurface = Color(0xFF16213E);
   static const Color backgroundCard = Color(0xFF1E2A4A);
