@@ -174,7 +174,7 @@ class ChatMessageBubble extends StatelessWidget {
             borderRadius: BorderRadius.circular(10),
             border: Border.all(color: AppColors.border),
           ),
-          codeblockTextStyle: const TextStyle(
+          // codeblockTextStyle removed for compatibility
             color: AppColors.textCode,
             fontSize: 13,
             fontFamily: 'monospace',
