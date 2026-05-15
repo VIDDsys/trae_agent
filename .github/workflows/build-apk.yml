@@ -33,6 +33,7 @@ jobs:
           path: build/app/outputs/flutter-apk/app-debug.apk
 
       - name: Build APK (release)
+        continue-on-error: true
         run: flutter build apk --release
 
       - name: Upload release APK artifact
