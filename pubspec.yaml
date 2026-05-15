@@ -1,0 +1,37 @@
+name: trae_agent
+description: AI coding agent - local LLM-powered code assistant
+publish_to: 'none'
+version: 0.1.0+1
+
+environment:
+  sdk: '>=3.2.0 <4.0.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+  flutter_localizations:
+    sdk: flutter
+
+  # State management
+  provider: ^6.1.2
+
+  # Networking
+  http: ^1.2.1
+
+  # Local storage
+  shared_preferences: ^2.2.3
+
+  # UI
+  flutter_markdown: ^0.7.4
+  google_fonts: ^6.1.0
+
+  # System
+  url_launcher: ^6.2.4
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^4.0.0
+
+flutter:
+  uses-material-design: true
