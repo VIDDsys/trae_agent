@@ -30,3 +30,9 @@
 # Desugaring
 -dontwarn java.time.**
 -keep class java.time.** { *; }
+
+# Play Core (missing from R8)
+-keep class com.google.android.play.core.** { *; }
+-dontwarn com.google.android.play.core.**
+-keep class com.google.android.play.core.splitcompat.** { *; }
+-dontwarn com.google.android.play.core.splitcompat.**
