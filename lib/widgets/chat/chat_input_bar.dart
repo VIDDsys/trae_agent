@@ -2,21 +2,17 @@ import 'package:flutter/material.dart';
 import '../../theme/colors.dart';
 
 class ChatInputBar extends StatefulWidget {
-  final void Function(String) onSend;
-  final bool isProcessing;
-  final VoidCallback onCancel;
+  final Function(String) onSend;
   final VoidCallback onRetry;
-  final bool apiKeyConfigured;
-  final VoidCallback onConfigureApi;
+  final bool isSending;
+  final bool isInitialized;
 
   const ChatInputBar({
     super.key,
     required this.onSend,
-    required this.isProcessing,
-    required this.onCancel,
     required this.onRetry,
-    required this.apiKeyConfigured,
-    required this.onConfigureApi,
+    required this.isSending,
+    required this.isInitialized,
   });
 
   @override
@@ -24,169 +20,85 @@ class ChatInputBar extends StatefulWidget {
 }
 
 class _ChatInputBarState extends State<ChatInputBar> {
-  final TextEditingController _controller = TextEditingController();
-  bool _hasText = false;
+  final _controller = TextEditingController();
+  final _focusNode = FocusNode();
 
   @override
   void initState() {
     super.initState();
-    _controller.addListener(() {
-      setState(() => _hasText = _controller.text.trim().isNotEmpty);
-    });
+    _focusNode.requestFocus();
   }
 
   @override
   void dispose() {
     _controller.dispose();
+    _focusNode.dispose();
     super.dispose();
   }
 
-  void _handleSend() {
+  void _send() {
     final text = _controller.text.trim();
-    if (text.isEmpty || widget.isProcessing) return;
-
+    if (text.isEmpty) return;
     widget.onSend(text);
     _controller.clear();
-    setState(() => _hasText = false);
+    _focusNode.requestFocus();
   }
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      decoration: const BoxDecoration(
-        color: AppColors.backgroundSurface,
-        border: Border(
-          top: BorderSide(color: AppColors.border, width: 1),
-        ),
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppColors.border),
       ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.end,
         children: [
-          // API key warning
-          if (!widget.apiKeyConfigured)
-            GestureDetector(
-              onTap: widget.onConfigureApi,
+          const SizedBox(width: 8),
+          // Text input
+          Expanded(
+            child: TextField(
+              controller: _controller,
+              focusNode: _focusNode,
+              maxLines: 5,
+              minLines: 1,
+              textInputAction: TextInputAction.send,
+              onSubmitted: widget.isSending ? null : (_) => _send(),
+              style: const TextStyle(
+                color: AppColors.textPrimary,
+                fontSize: 15,
+              ),
+              decoration: const InputDecoration(
+                hintText: 'Ask me anything...',
+                hintStyle: TextStyle(color: AppColors.textMuted),
+                border: InputBorder.none,
+                contentPadding: EdgeInsets.symmetric(horizontal: 8, vertical: 12),
+              ),
+            ),
+          ),
+          // Send / Stop button
+          Padding(
+            padding: const EdgeInsets.all(6),
+            child: GestureDetector(
+              onTap: widget.isSending ? null : _send,
               child: Container(
-                width: double.infinity,
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                color: AppColors.warning.withOpacity(0.1),
-                child: Row(
-                  children: [
-                    const Icon(Icons.warning_amber, color: AppColors.warning, size: 16),
-                    const SizedBox(width: 8),
-                    const Expanded(
-                      child: Text(
-                        'API key not configured. Tap to set up.',
-                        style: TextStyle(color: AppColors.warning, fontSize: 12),
-                      ),
-                    ),
-                    const Icon(Icons.arrow_forward_ios, color: AppColors.warning, size: 12),
-                  ],
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: widget.isSending
+                      ? AppColors.textMuted.withOpacity(0.2)
+                      : AppColors.accentBlue,
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Icon(
+                  widget.isSending ? Icons.stop : Icons.arrow_upward,
+                  color: widget.isSending ? AppColors.textMuted : Colors.white,
+                  size: 18,
                 ),
               ),
             ),
-
-          // Input row
-          Padding(
-            padding: EdgeInsets.only(
-              left: 12,
-              right: 12,
-              top: widget.apiKeyConfigured ? 12 : 8,
-              bottom: 12,
-            ),
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.end,
-              children: [
-                // Attach files button
-                _buildIconButton(Icons.attach_file, () {
-                  // TODO: File picker
-                }),
-                const SizedBox(width: 4),
-
-                // Text input
-                Expanded(
-                  child: Container(
-                    constraints: const BoxConstraints(maxHeight: 120),
-                    decoration: BoxDecoration(
-                      color: AppColors.backgroundInput,
-                      borderRadius: BorderRadius.circular(14),
-                      border: Border.all(
-                        color: _hasText ? AppColors.accentBlue : AppColors.border,
-                        width: _hasText ? 1.5 : 1,
-                      ),
-                    ),
-                    child: Row(
-                      crossAxisAlignment: CrossAxisAlignment.end,
-                      children: [
-                        Expanded(
-                          child: TextField(
-                            controller: _controller,
-                            maxLines: null,
-                            textInputAction: TextInputAction.newline,
-                            style: const TextStyle(
-                              color: AppColors.textPrimary,
-                              fontSize: 15,
-                              height: 1.4,
-                            ),
-                            decoration: const InputDecoration(
-                              hintText: 'Ask me anything...',
-                              hintStyle: TextStyle(
-                                color: AppColors.textMuted,
-                                fontSize: 15,
-                              ),
-                              border: InputBorder.none,
-                              contentPadding: EdgeInsets.symmetric(
-                                horizontal: 16,
-                                vertical: 10,
-                              ),
-                              isDense: true,
-                            ),
-                            onSubmitted: (_) => _handleSend(),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 4),
-
-                // Send / Cancel button
-                if (widget.isProcessing)
-                  _buildIconButton(Icons.stop_circle_outlined, widget.onCancel,
-                      color: AppColors.error)
-                else
-                  _buildIconButton(
-                    _hasText ? Icons.arrow_upward : Icons.mic_none,
-                    _hasText ? _handleSend : () {},
-                    color: _hasText ? AppColors.accentBlue : AppColors.textMuted,
-                    filled: _hasText,
-                  ),
-              ],
-            ),
           ),
         ],
-      ),
-    );
-  }
-
-  Widget _buildIconButton(IconData icon, VoidCallback? onTap,
-      {Color color = AppColors.textMuted, bool filled = false}) {
-    return Material(
-      color: filled ? AppColors.accentBlue : Colors.transparent,
-      borderRadius: BorderRadius.circular(12),
-      child: InkWell(
-        borderRadius: BorderRadius.circular(12),
-        onTap: onTap,
-        child: Container(
-          width: 40,
-          height: 40,
-          alignment: Alignment.center,
-          child: Icon(
-            icon,
-            color: filled ? Colors.white : color,
-            size: 22,
-          ),
-        ),
       ),
     );
   }
