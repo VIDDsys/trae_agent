@@ -16,11 +16,11 @@ class SyntaxHighlighter {
   static const Color kBuiltinColor = Color(0xFFD2A8FF);
   static const Color kAnnotationColor = Color(0xFFD2A8FF);
 
-  static const _TokenRule kDoubleQuote = _TokenRule(RegExp(r'"[^"]*"'), kStringColor);
-  static const _TokenRule kSingleQuote = _TokenRule(RegExp(r"'[^']*'"), kStringColor);
-  static const _TokenRule kNumber = _TokenRule(RegExp(r'\b(?:0[xX][0-9a-fA-F]+|[0-9]+\.[0-9]+|[0-9]+)\b'), kNumberColor);
+  static final _TokenRule kDoubleQuote = _TokenRule(RegExp(r'"[^"]*"'), kStringColor);
+  static final _TokenRule kSingleQuote = _TokenRule(RegExp(r"'[^']*'"), kStringColor);
+  static final _TokenRule kNumber = _TokenRule(RegExp(r'\b(?:0[xX][0-9a-fA-F]+|[0-9]+\.[0-9]+|[0-9]+)\b'), kNumberColor);
 
-  TextSpan highlight(String code, String language) {
+  static TextSpan highlight(String code, String language) {
     switch (language.toLowerCase()) {
       case 'dart': return DartSyntaxHighlighter().highlight(code);
       case 'python': return PythonSyntaxHighlighter().highlight(code);
