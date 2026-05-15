@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-abstract class SyntaxHighlighter {
+class SyntaxHighlighter {
   static SyntaxHighlighter? _forLanguage(String? language) {
     switch (language?.toLowerCase()) {
       case 'dart': return DartSyntaxHighlighter();
@@ -39,7 +39,7 @@ abstract class SyntaxHighlighter {
     return highlighter._highlight(code);
   }
 
-  TextSpan _highlight(String code);
+  TextSpan _highlight(String code) => TextSpan(text: code);
 
   static const _keywordColor = Color(0xFF7C3AED);
   static const _stringColor = Color(0xFF34D399);
@@ -425,15 +425,15 @@ class BashSyntaxHighlighter extends SyntaxHighlighter {
       _TokenRule(RegExp(r'"(?:[^"\\]|\\.)*"'), _stringColor),
       _TokenRule(RegExp(r"'(?:[^'\\]|\\.)*'"), _stringColor),
       _TokenRule(RegExp(r'`(?:[^`\\]|\\.)*`'), _stringColor),
-      _TokenRule(RegExp(r'\b(?:if|then|else|elif|fi|for|while|do|done|case|esac|function|return|exit|break|continue|export|local|readonly|unset|declare|typeset|set|unset|read|echo|printf|source|\.|exec|eval|trap|wait|shift|getopts)\b'), _keywordColor),
-      _TokenRule(RegExp(r'\b(?:sudo|apt|apt-get|yum|dnf|brew|pip|npm|yarn|git|docker|kubectl|curl|wget|grep|sed|awk|find|xargs|chmod|chown|ls|cd|mkdir|rm|cp|mv|cat|less|more|head|tail|touch|vim|nano)\b'), _builtinColor),
-      _TokenRule(RegExp(r'\$\{?\w+\}?'), _variableColor),
-      _TokenRule(RegExp(r'\b\d+\b'), _numberColor),
-      _TokenRule(RegExp(r'=>|[+\-*/%&|^~<>!?=]+'), _operatorColor),
-      _TokenRule(RegExp(r'[{}[\]();.,]'), _punctuationColor),
+      _TokenRule(RegExp(r'\b(?:if|then|else|elif|fi|for|while|do|done|case|esac|function|return|exit|break|continue|export|local|readonly|unset|declare|typeset|set|unset|read|echo|printf|source|\.|exec|eval|trap|wait|shift|getopts)\b'), SyntaxHighlighter._keywordColor),
+      _TokenRule(RegExp(r'\b(?:sudo|apt|apt-get|yum|dnf|brew|pip|npm|yarn|git|docker|kubectl|curl|wget|grep|sed|awk|find|xargs|chmod|chown|ls|cd|mkdir|rm|cp|mv|cat|less|more|head|tail|touch|vim|nano)\b'), SyntaxHighlighter._builtinColor),
+      _TokenRule(RegExp(r'\$\{?\w+\}?'), SyntaxHighlighter._variableColor),
+      _TokenRule(RegExp(r'\b\d+\b'), SyntaxHighlighter._numberColor),
+      _TokenRule(RegExp(r'=>|[+\-*/%&|^~<>!?=]+'), SyntaxHighlighter._operatorColor),
+      _TokenRule(RegExp(r'[{}[\]();.,]'), SyntaxHighlighter._punctuationColor),
     ];
     final spans = _tokenize(code, rules);
-    return TextSpan(children: spans, style: _baseStyle);
+    return TextSpan(children: spans, style: SyntaxHighlighter._baseStyle);
   }
 }
 
