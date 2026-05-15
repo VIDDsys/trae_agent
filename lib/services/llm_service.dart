@@ -96,116 +96,108 @@ class LLMService {
     return messages;
   }
 
-  String get _defaultSystemPrompt => '''You are Trae Agent, an expert AI coding assistant.
-You help users write, review, debug, and optimize code.
+  String get _defaultSystemPrompt => '''Hey there 👋 I'm Vias — your AI coding buddy running right on your phone.
 
-You have access to the following tools to help complete tasks:
-- read_file: Read file contents from the project
-- write_file: Write or edit files
-- search_code: Search across the codebase
-- run_command: Execute terminal commands
-- git_operation: Perform Git operations
-- list_directory: List files in a directory
+About me:
+- I'm a hands-on technical partner, not a chatbot 🤖
+- Direct and to the point — I lead with answers, then explain
+- I use emojis to keep things friendly and readable 😊
+- If I don't know something, I'll tell you straight up
 
-When you need to use a tool, respond with a JSON tool call in this format:
-{"tool_calls": [{"id": "call_xxx", "type": "function", "function": {"name": "tool_name", "arguments": {"arg1": "value1"}}}]}
+What I can do for you:
+📂 Read, write, and edit files in your project
+🔍 Search through your codebase
+📋 Browse your project's files and folders
+🌐 Look things up on the web
 
-After receiving tool results, continue the conversation naturally.
-Always provide clear explanations alongside your code changes.
-Format code blocks with proper language tags for syntax highlighting.''';
+My tools:
+- `read_file(path)` — Open and read any file
+- `write_file(path, content)` — Create or update files
+- `edit_file(path, old_string, new_string)` — Make targeted edits
+- `search_code(query)` — Find code patterns across your project
+- `list_directory(path)` — Explore folder structure
+- `web_search(query)` — Search the web for answers
+
+A few ground rules:
+- I work best when you tell me what you want to build or fix
+- I'll wrap code in proper \`\`\`language blocks
+- File operations stay within your selected workspace folder
+- Web search uses DuckDuckGo (free, no API key needed)''';
 
   /// Available tool definitions sent to the LLM
   List<Map<String, dynamic>> get _tools => [
     {
-      'type': 'function',
-      'function': {
-        'name': 'read_file',
-        'description': 'Read the contents of a file',
-        'parameters': {
-          'type': 'object',
-          'properties': {
-            'path': {'type': 'string', 'description': 'Absolute or relative file path'},
-          },
-          'required': ['path'],
-        },
-      },
-    },
-    {
-      'type': 'function',
-      'function': {
-        'name': 'write_file',
-        'description': 'Write content to a file (creates/overwrites)',
-        'parameters': {
-          'type': 'object',
-          'properties': {
-            'path': {'type': 'string', 'description': 'File path'},
-            'content': {'type': 'string', 'description': 'File content'},
-          },
-          'required': ['path', 'content'],
-        },
-      },
-    },
-    {
-      'type': 'function',
-      'function': {
-        'name': 'search_code',
-        'description': 'Search for text or patterns across project files',
-        'parameters': {
-          'type': 'object',
-          'properties': {
-            'query': {'type': 'string', 'description': 'Search query or regex pattern'},
-            'path': {'type': 'string', 'description': 'Optional path to search in'},
-          },
-          'required': ['query'],
-        },
-      },
-    },
-    {
-      'type': 'function',
-      'function': {
-        'name': 'run_command',
-        'description': 'Execute a shell command',
-        'parameters': {
-          'type': 'object',
-          'properties': {
-            'command': {'type': 'string', 'description': 'Shell command to execute'},
-          },
-          'required': ['command'],
-        },
-      },
-    },
-    {
-      'type': 'function',
-      'function': {
-        'name': 'list_directory',
-        'description': 'List files and directories in a path',
-        'parameters': {
-          'type': 'object',
-          'properties': {
-            'path': {'type': 'string', 'description': 'Directory path'},
-          },
-          'required': ['path'],
-        },
-      },
-    },
-    {
-      'type': 'function',
-      'function': {
-        'name': 'git_operation',
-        'description': 'Perform git operations (status, diff, commit, log, branch)',
-        'parameters': {
-          'type': 'object',
-          'properties': {
-            'operation': {
-              'type': 'string',
-              'enum': ['status', 'diff', 'commit', 'log', 'branch', 'add', 'checkout'],
+          'type': 'function',
+          'function': {
+            'name': 'read_file',
+            'description': 'Read the full contents of any file from the filesystem. Use for code review, analysis, inspecting configuration, logs, or understanding existing code.',
+            'parameters': {
+              'type': 'object',
+              'properties': {
+                'path': {'type': 'string', 'description': 'Absolute or relative path to the file to read'},
+              },
+              'required': ['path'],
             },
-            'args': {'type': 'string', 'description': 'Additional arguments'},
           },
-          'required': ['operation'],
         },
-      },
-    },
+    {
+          'type': 'function',
+          'function': {
+            'name': 'write_file',
+            'description': 'Create a new file or overwrite an existing file with the given content. Use for implementing code changes, creating new files, editing configuration, or writing documentation.',
+            'parameters': {
+              'type': 'object',
+              'properties': {
+                'path': {'type': 'string', 'description': 'Absolute or relative path of the file to write'},
+                'content': {'type': 'string', 'description': 'Full file content to write (completely replaces existing content)'},
+              },
+              'required': ['path', 'content'],
+            },
+          },
+        },
+    {
+          'type': 'function',
+          'function': {
+            'name': 'search_code',
+            'description': 'Search for text patterns across project files using regex. Use for finding relevant code, references, function definitions, imports, or any text pattern in the codebase.',
+            'parameters': {
+              'type': 'object',
+              'properties': {
+                'query': {'type': 'string', 'description': 'Search query or regex pattern to find'},
+                'path': {'type': 'string', 'description': 'Optional directory path to scope the search (defaults to project root)'},
+              },
+              'required': ['query'],
+            },
+          },
+        },
+    {
+          'type': 'function',
+          'function': {
+            'name': 'list_directory',
+            'description': 'List files and subdirectories in a given path. Use for exploring project structure, finding files, or understanding directory layout before reading files.',
+            'parameters': {
+              'type': 'object',
+              'properties': {
+                'path': {'type': 'string', 'description': 'Directory path to list (absolute or relative)'},
+              },
+              'required': ['path'],
+            },
+          },
+        },
+    {
+          'type': 'function',
+          'function': {
+            'name': 'web_search',
+            'description': 'Search the web for information. Use for looking up documentation, troubleshooting errors, finding code examples, researching libraries or APIs, or any information need that requires internet access.',
+            'parameters': {
+              'type': 'object',
+              'properties': {
+                'query': {'type': 'string', 'description': 'Search query string (natural language or keywords)'},
+              },
+              'required': ['query'],
+            },
+          },
+        },
   ];
 
   /// Build the request body for the chat completions API
