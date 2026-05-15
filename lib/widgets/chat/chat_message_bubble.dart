@@ -146,55 +146,7 @@ class ChatMessageBubble extends StatelessWidget {
       child: MarkdownBody(
         data: message.content,
         selectable: true,
-        styleSheet: MarkdownStyleSheet(
-        // Text styles
-        p: const TextStyle(color: AppColors.textPrimary, fontSize: 15, height: 1.6),
-        h1: const TextStyle(color: AppColors.textPrimary, fontSize: 22, fontWeight: FontWeight.bold, height: 1.4),
-        h2: const TextStyle(color: AppColors.textPrimary, fontSize: 19, fontWeight: FontWeight.bold, height: 1.4),
-        h3: const TextStyle(color: AppColors.textPrimary, fontSize: 17, fontWeight: FontWeight.w600, height: 1.4),
-        h4: const TextStyle(color: AppColors.textPrimary, fontSize: 16, fontWeight: FontWeight.w600, height: 1.4),
-        h5: const TextStyle(color: AppColors.textPrimary, fontSize: 15, fontWeight: FontWeight.w600, height: 1.4),
-        h6: const TextStyle(color: AppColors.textPrimary, fontSize: 14, fontWeight: FontWeight.w600, height: 1.4),
-
-        // Code
-        code: const TextStyle(
-          color: AppColors.textCode,
-          fontSize: 13,
-          fontFamily: 'monospace',
-          backgroundColor: Color(0xFF1E293B),
-        ),
-        codeblockDecoration: BoxDecoration(
-          color: const Color(0xFF0D1117),
-          borderRadius: BorderRadius.circular(10),
-          border: Border.all(color: AppColors.border),
-        ),
-
-        // Blockquote
-        blockquoteDecoration: BoxDecoration(
-          color: AppColors.accentBlue.withOpacity(0.05),
-          border: const Border(
-            left: BorderSide(color: AppColors.accentBlue, width: 3),
-          ),
-        ),
-
-        // Links
-        a: const TextStyle(color: AppColors.accentBlue, decoration: TextDecoration.underline),
-
-        // Horizontal rule
-        horizontalRuleDecoration: BoxDecoration(
-          border: Border(top: BorderSide(color: AppColors.border, width: 1)),
-        ),
-
-        // Del (strikethrough)
-        del: const TextStyle(color: AppColors.textMuted, decoration: TextDecoration.lineThrough),
-
-        // Strong
-        strong: const TextStyle(color: AppColors.textPrimary, fontWeight: FontWeight.bold),
-
-        // Emphasis
-        em: const TextStyle(color: AppColors.textPrimary, fontStyle: FontStyle.italic),
-      ),
-          codeblockPadding: const EdgeInsets.all(16),
+        
 
           // Inline code
           codeblockAlignment: Alignment.centerLeft,
@@ -236,9 +188,6 @@ class ChatMessageBubble extends StatelessWidget {
           // Checkbox
           checkbox: const TextStyle(color: AppColors.accentBlue),
         ),
-        onTapLink: (text, href, title) {
-          // Handle link taps
-        },
       ),
     );
   }
