@@ -181,7 +181,6 @@ class ChatMessageBubble extends StatelessWidget {
           em: const TextStyle(color: AppColors.textPrimary, fontStyle: FontStyle.italic),
         ),
       ),
-      ),
     );
   }
 
