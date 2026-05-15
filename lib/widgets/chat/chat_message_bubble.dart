@@ -157,9 +157,9 @@ class ChatMessageBubble extends StatelessWidget {
           h6: const TextStyle(color: AppColors.textPrimary, fontSize: 14, fontWeight: FontWeight.w600, height: 1.4),
 
           // List
-          ul: const TextStyle(color: AppColors.textPrimary, fontSize: 15, height: 1.6),
-          ol: const TextStyle(color: AppColors.textPrimary, fontSize: 15, height: 1.6),
-          li: const TextStyle(color: AppColors.textPrimary, fontSize: 15, height: 1.8),
+
+
+
           listBullet: const TextStyle(color: AppColors.accentBlue),
 
           // Code blocks
@@ -250,7 +250,7 @@ class ChatMessageBubble extends StatelessWidget {
         color = const Color(0xFF00FF00);
         break;
       case 'git_operation':
-        icon = Icons.code_branch;
+        icon = Icons.call_split;
         color = AppColors.accentPurple;
         break;
       case 'list_directory':
