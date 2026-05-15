@@ -263,4 +263,31 @@ class FileExplorerScreen extends StatelessWidget {
     }
     controller.dispose();
   }
+
+  static String languageFromExtension(String? ext) {
+    switch (ext?.toLowerCase()) {
+      case 'dart': return 'dart';
+      case 'py': return 'python';
+      case 'js': return 'javascript';
+      case 'ts': return 'typescript';
+      case 'java': return 'java';
+      case 'kt': case 'kts': return 'kotlin';
+      case 'rs': return 'rust';
+      case 'go': return 'go';
+      case 'c': return 'c';
+      case 'cpp': case 'cc': case 'cxx': return 'cpp';
+      case 'h': case 'hpp': return 'cpp';
+      case 'html': case 'htm': return 'html';
+      case 'css': return 'css';
+      case 'json': return 'json';
+      case 'yaml': case 'yml': return 'yaml';
+      case 'sql': return 'sql';
+      case 'sh': case 'bash': case 'zsh': return 'bash';
+      case 'md': case 'markdown': return 'markdown';
+      case 'toml': case 'ini': case 'cfg': return 'ini';
+      case 'xml': return 'xml';
+      case 'svg': return 'xml';
+      default: return 'plaintext';
+    }
+  }
 }
