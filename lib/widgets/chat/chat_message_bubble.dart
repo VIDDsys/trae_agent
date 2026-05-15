@@ -146,10 +146,23 @@ class ChatMessageBubble extends StatelessWidget {
       child: MarkdownBody(
         data: message.content,
         selectable: true,
-        
+        styleSheet: MarkdownStyleSheet(
+          // Text styles
+          p: const TextStyle(color: AppColors.textPrimary, fontSize: 15, height: 1.6),
+          h1: const TextStyle(color: AppColors.textPrimary, fontSize: 22, fontWeight: FontWeight.bold, height: 1.4),
+          h2: const TextStyle(color: AppColors.textPrimary, fontSize: 19, fontWeight: FontWeight.bold, height: 1.4),
+          h3: const TextStyle(color: AppColors.textPrimary, fontSize: 17, fontWeight: FontWeight.w600, height: 1.4),
+          h4: const TextStyle(color: AppColors.textPrimary, fontSize: 16, fontWeight: FontWeight.w600, height: 1.4),
+          h5: const TextStyle(color: AppColors.textPrimary, fontSize: 15, fontWeight: FontWeight.w600, height: 1.4),
+          h6: const TextStyle(color: AppColors.textPrimary, fontSize: 14, fontWeight: FontWeight.w600, height: 1.4),
 
-          // Inline code
-          codeblockAlignment: Alignment.centerLeft,
+          // Code
+          code: const TextStyle(
+            color: AppColors.textCode,
+            fontSize: 13,
+            fontFamily: 'monospace',
+            backgroundColor: Color(0xFF1E293B),
+          ),
 
           // Blockquote
           blockquoteDecoration: BoxDecoration(
@@ -158,36 +171,16 @@ class ChatMessageBubble extends StatelessWidget {
               left: BorderSide(color: AppColors.accentBlue, width: 3),
             ),
           ),
-          blockquotePadding: const EdgeInsets.fromLTRB(12, 4, 12, 4),
-          blockquote: const TextStyle(color: AppColors.textSecondary, fontSize: 14, height: 1.5),
 
           // Links
           a: const TextStyle(color: AppColors.accentBlue, decoration: TextDecoration.underline),
 
-          // Tables
-          tableBorder: TableBorder.all(color: AppColors.border, width: 1),
-          tableHead: const TextStyle(color: AppColors.textPrimary, fontWeight: FontWeight.w600, fontSize: 13),
-          tableBody: const TextStyle(color: AppColors.textPrimary, fontSize: 13),
-          tableCellsPadding: const EdgeInsets.all(8),
-          tableColumnWidth: const FlexColumnWidth(),
-
-          // Horizontal rule
-          horizontalRuleDecoration: BoxDecoration(
-            border: Border(top: BorderSide(color: AppColors.border, width: 1)),
-          ),
-
-          // Del (strikethrough)
+          // Del, Strong, Em
           del: const TextStyle(color: AppColors.textMuted, decoration: TextDecoration.lineThrough),
-
-          // Strong
           strong: const TextStyle(color: AppColors.textPrimary, fontWeight: FontWeight.bold),
-
-          // Emphasis
           em: const TextStyle(color: AppColors.textPrimary, fontStyle: FontStyle.italic),
-
-          // Checkbox
-          checkbox: const TextStyle(color: AppColors.accentBlue),
         ),
+      ),
       ),
     );
   }
